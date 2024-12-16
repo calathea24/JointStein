@@ -1,0 +1,63 @@
+configfile: "config.yaml"
+
+simulations=config["simulations"]
+alg=config["alg"]
+ps=config["ps"]
+ns=range(config["ns1"], config["ns2"], config["ns3"])
+gs=range(config["gs1"], config["gs2"], config["gs3"])
+joint=config["joint"]
+coper=range(config["coper1"], config["coper2"], config["coper3"])
+alphaMethod=config["alphaMethod"]
+pAdjMet=config["pAdjMet"]
+HighCri=config["HighCri"]
+iterations=range(config["iterations"])
+
+outputs = ["results/mcc"+"_"+s+"/"+s+"_"+a+"_p"+str(p)+"_n"+str(n)+"_commonper"+str(co)+"_"+str(g)+"group_joint"+j+"_jointMet"+aMet+"_padj"+pAdj+"_HC"+hc+"_iter"+str(i)+"_mcc.rda" for s in simulations for a in alg for p in ps for n in ns for co in coper for g in gs for j in joint for aMet in alphaMethod for pAdj in pAdjMet for hc in HighCri for i in iterations]
+
+rule all:
+	input: outputs
+
+rule simulateER:
+	output: "results/pcor/{sim}_true_{p}_{n}_{co}_{g}_{i}_pcor.rda", temp("results/simulations/{sim}_{p}_{n}_{co}_{g}_{i}_data.rda")
+	params:
+		P = "{p}",
+		N = "{n}",
+		G = "{g}",
+		coper = "{co}"
+	conda: "envs/R.yaml"
+	script: "snakescripts/Simulations.R"
+
+rule pcorShrink:
+	input: "results/simulations/{sim}_{p}_{n}_{co}_{g}_{i}_data.rda"
+	output: "results/pcor/{sim}_{a}_{p}_{n}_{co}_{g}_{j}_{aMet}_{i}_pcor.rda"
+	params:
+		P = "{p}",
+		N = "{n}",
+		alg = "{a}",
+		G = "{g}",
+		joint = "{j}",
+		alphaMet = "{aMet}",
+		coper = "{co}"
+	conda: "envs/R.yaml"
+	script: "snakescripts/Shrinkage.R"
+
+rule mcc:
+	input: "results/pcor/{sim}_true_{p}_{n}_{co}_{g}_{i}_pcor.rda","results/pcor/{sim}_{a}_{p}_{n}_{co}_{g}_{j}_{aMet}_{i}_pcor.rda"
+	output: "results/mcc_{sim}/{sim}_{a}_p{p}_n{n}_commonper{co}_{g}group_joint{j}_jointMet{aMet}_padj{pAdj}_HC{hc}_iter{i}_mcc.rda"
+	params:
+		P = "{p}",
+		N = "{n}",
+		alg = "{a}",
+		G = "{g}",
+		i = "{i}",
+		joint = "{j}",
+		alphaMet = "{aMet}",
+		coper = "{co}",
+		padj = "{pAdj}",
+		hc = "{hc}"
+	conda: "envs/R.yaml"
+	script: "snakescripts/MCC.R"
+
+
+
+

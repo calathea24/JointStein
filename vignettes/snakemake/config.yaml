@@ -1,0 +1,19 @@
+simulations: ["04OCT2024_BMSamples"]
+alg: ["GeneNet"]
+ps: [2000]
+ns1: 200
+ns2: 2200
+ns3: 200
+coper1: 40
+coper2: 50
+coper3: 10
+gs1: 5
+gs2: 15 
+gs3: 5
+joint: ["TRUE", "FALSE"]
+alphaMethod: ["mtse"]
+pAdjMet: ["BH"]
+HighCri: ["FALSE"]
+iterations: 10
+
+
