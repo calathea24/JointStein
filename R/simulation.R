@@ -1,4 +1,16 @@
-# Coarse-grained structure: 1 shared graph + 1 group-specific non shared graph
+#' Simulating graphical models with coarse-grained structure
+#'
+#' Based on survey research paper (https://doi.org/10.1002/wics.1582) about joint graphical modeling, coarse-grained structure is used. In coarse-grained structure, there is one shared network between models and specific network to each model is simulated randomly
+#'
+#' @param p number of features or nodes in graphical models. All graphical models shared same set of nodes
+#' @param num.group number of groups/models for simulation
+#' @param commonEdge.per percentage of shared edges between models. 40% is default
+#' @param degree average number of edges per nodes. 2 is default
+#' @param edges.info information of shared and specific edges. TRUE (default) or FALSE
+#'
+#' @return return partial correlation matrices. If edges.info is TRUE then return list with 2 objects: pcor.net is partial correlation matrices, common.edges: information of shared edges among models
+
+
 coarseGrained_simulate <- function(p, num.group, commonEdge.per = 40, degree = 2, edges.info = TRUE) {
   #20FEB2024: modify precision.lo[idx.commonEdges] to prevent bias in JGL, networks only shared structure not value of precision matrix
   library(corpcor)
