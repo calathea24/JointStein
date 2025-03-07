@@ -1,11 +1,22 @@
 Package: JointStein
-Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Joint graphical modeling Stein-type linear shrinkage
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Duong", "Vo", , "h.vo@surrey.ac.uk", role = c("aut", "cre")),
+    person("Thomas", "Thorne", , "tom.thorne@surrey.ac.uk", role = "aut")
+  )
+Description: Gene network inference in scRNAseq data using two-target linear covariance shrinkage
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
 Encoding: UTF-8
-LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Imports: 
+    parallel,
+    GeneNet,
+    mltools,
+    JuliaCall
