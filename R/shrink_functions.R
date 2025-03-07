@@ -1,6 +1,26 @@
+#' Covariance linear shrinkage using GeneNet algorithm
+#'
+#' Shrinking sample covariance matrix towards identity matrix using GeneNet algorithm from GeneNet R package
+#'
+#' @param data n x p matrix which n observations in rows and p features in column
+#'
+#' @return estimated covariance matrix
+#' @import GeneNet
+#' @references Schäfer, J., & Strimmer, K. (2005). A shrinkage approach to large-scale covariance matrix estimation and implications for functional genomics. Statistical applications in genetics and molecular biology, 4(1)
+
 GeneNet <- function(data) {
   return(cor.shrink(data, verbose = FALSE))
 }
+
+
+#' Covariance linear shrinkage using Fisher2011 algorithm
+#'
+#' Shrinking sample covariance matrix towards identity matrix using Fisher2011 algorithm
+#'
+#' @param data n x p matrix which n observations in rows and p features in column
+#'
+#' @return estimated covariance matrix
+#' @references Fisher, T. J., & Sun, X. (2011). Improved Stein-type shrinkage estimators for the high-dimensional multivariate normal covariance matrix. Computational Statistics & Data Analysis, 55(5), 1909-1918.
 
 Fisher2011 <- function(data) {
   x = as.matrix(data)
@@ -20,6 +40,17 @@ Fisher2011 <- function(data) {
   S.est = (1-lambda)*S.emp + lambda*TS
   return(S.est)
 }
+
+
+
+#' Covariance linear shrinkage using HY2014 algorithm
+#'
+#' Shrinking sample covariance matrix towards identity matrix using HY2014 algorithm
+#'
+#' @param data n x p matrix which n observations in rows and p features in column
+#'
+#' @return estimated covariance matrix
+#' @references Himeno, T., & Yamada, T. (2014). Estimations for some functions of covariance matrix in high dimension under non-normality and its applications. Journal of Multivariate Analysis, 130, 27-44.
 
 HY2014 <- function(data) {
   x = as.matrix(data)
@@ -49,6 +80,17 @@ HY2014 <- function(data) {
   return(S.est)
 }
 
+
+
+#' Covariance linear shrinkage using IKS algorithm
+#'
+#' Shrinking sample covariance matrix towards identity matrix using IKS algorithm
+#'
+#' @param data n x p matrix which n observations in rows and p features in column
+#'
+#' @return estimated covariance matrix
+#' @references Ikeda, Y., Kubokawa, T., & Srivastava, M. S. (2016). Comparison of linear shrinkage estimators of a large covariance matrix in normal and non-normal distributions. Computational Statistics & Data Analysis, 95, 95-108.
+
 IKS <- function(data) {
   x = as.matrix(data)
   N = nrow(x)
@@ -75,78 +117,21 @@ IKS <- function(data) {
   return(S.est)
 }
 
-nlshrink <- function (data) {
-  xs <- as.matrix(data)
-  n <- nrow(xs)
-  p <- ncol(xs)
 
-  sam_cov <- covcal(xs)
 
-  # Get the sorted eigenvalues and eigenvectors
-  sam_eig <- eigen(sam_cov, symmetric = TRUE)
-  lambda <- sam_eig$values
-  u <- sam_eig$vectors
+#' Two-target linear covariance shrinkage
+#'
+#' Shrinking sample covariance matrix towards identity and shared matrices between groups.
+#'
+#' @param data n x p matrix which includes observations from all groups in rows and features in column
+#' @param group.idx list of indexes for each group. For instance, if data has 2 groups then group.idx list should have 2 objects and each object is vector of indexes of observations belonging to each group.
+#' @param group.select a number of which group is selected for the estimation
+#' @param covshrinkf name of standard covariance linear shrinkage function to pre-shrink sample covariance matrices from each group before calculating shared target matrix in two-target linear shrinkage
+#'
+#' @return estimated covariance matrix of selected group
 
-  # Analytical Nonlinear Shrinkage Kernel Formula
-  # tolerance value to exclude error eigenvalues
-  #  eig_nonzero_tol <- max(n,p)*max(lambda)*.Machine$double.eps
-  eig_nonzero_tol <- 0.001
-  id_select <- which(lambda > eig_nonzero_tol)
 
-  lambda <- lambda[id_select]
-  r <- length(lambda)
-  L <- matrix(lambda, nrow = r, ncol = r)
-
-  # LW Equation 4.9
-  h <- n^(-1 / 3)
-  H <- h * t(L)
-  x <- (L - t(L)) / H
-
-  # LW Equation 4.7
-  s1 <- (3 / 4) / sqrt(5)
-  s2 <- -(3 / 10) / pi
-  pos_x <- (1 - (x^2) / 5)
-  pos_x <- replace(pos_x, pos_x < 0, 0)
-  f_tilde <- s1 * matrixStats::rowMeans2(pos_x / H)
-
-  # LW Equation 4.8
-  log_term <- log(abs((sqrt(5) - x) / (sqrt(5) + x)))
-  Hftemp <- (s2 * x) + (s1 / pi) * (1 - (x^2) / 5) * log_term
-  sq5 <- which(abs(x) == sqrt(5))
-  Hftemp[sq5] <- s2 * x[sq5]
-  H_tilde <- matrixStats::rowMeans2(Hftemp / H)
-
-  # LW Equation 4.3
-  s3 <- pi * (p / n)
-  s4 <- 1 / (h^2)
-  if (length(id_select) == p) { ## changing
-    d_tilde <- lambda / ((s3 * lambda * f_tilde)^2 +
-                           (1 - (p / n) - s3 * lambda * H_tilde)^2)
-  } else {
-    ones <- rep(1, p - length(id_select))
-    log_term <- log((1 + sqrt(5) * h) / (1 - sqrt(5) * h))
-    m <- mean(1 / lambda)
-
-    # LW Equation C.8
-    Hf_tilde0 <- (1 / pi) * ((3 / 10) * s4 +
-                               (s1 / h) * (1 - (1 / 5) * s4) * log_term) * m
-
-    # LW Equation C.5
-    d_tilde0 <- 1 / (pi * (p - length(id_select)) / length(id_select) * Hf_tilde0)
-    #    d_tilde0 <- 1 / (pi * (p - n) / n * Hf_tilde0)
-
-    # LW Equation C.4
-    d_tilde1 <- lambda / ((pi^2 * lambda^2) * (f_tilde^2 + H_tilde^2))
-    d_tilde <- c(d_tilde1, d_tilde0 * ones)
-  }
-
-  # LW Equation 4.4
-  sigma_tilde <- u %*% tcrossprod(diag(d_tilde), u)
-
-  return(sigma_tilde)
-}
-
-mtse <- function(data, group.idx, group.select = 1, covshrinkf) {
+ttls <- function(data, group.idx, group.select = 1, covshrinkf) {
   library(dplyr)
   G <- length(group.idx) # number of groups
   n <- length(group.idx[[group.select]])
@@ -165,7 +150,7 @@ mtse <- function(data, group.idx, group.select = 1, covshrinkf) {
   rm(data)
 
   #3. Calculate target matrices and other parameters
-  S.emp <- lapply(group.idx, function(idx) covcal(y[idx,]))
+  S.emp <- lapply(group.idx, function(idx) covshrinkf(y[idx,]))
   S.g <- covcal(y[group.idx[[group.select]],])
   S.all <- 1/(G-1)*Reduce("+", S.emp[-group.select])
   I <- diag(p)
@@ -204,57 +189,29 @@ mtse <- function(data, group.idx, group.select = 1, covshrinkf) {
   return(S.est)
 }
 
-SEst <- function(method, ...){
-  method <- match.fun(method)
-  S.est <- method(...)
-  return(S.est)
-}
 
 steinShrink <- function(name){ ## rewrite using match.fun
   covshrinkf <- match.fun(name)
   return(covshrinkf)
 }
 
-jointGeneNet <- function(data, group.idx, group.select, covshrinkf) {
+
+#' Joint graphical modeling
+#'
+#' Conducting joint graphical modeling using two-target linear shrinkage
+#'
+#' @param data n x p matrix which includes observations from all groups in rows and features in column
+#' @param group.idx list of indexes for each group. For instance, if data has 2 groups then group.idx list should have 2 objects and each object is vector of indexes of observations belonging to each group.
+#' @param group.select a number of which group is selected for the estimation
+#' @param covshrinkf name of standard covariance linear shrinkage function to pre-shrink sample covariance matrices from each group before calculating shared target matrix in two-target linear shrinkage
+#' @param jointest TRUE (applying joint graphical modeling, default) or FALSE (applying standard graphical modeling)
+#'
+#'
+#' @return estimated partial correlation matrix of selected group
+
+
+pcorshrink_joint <- function(data, group.idx, group.select = 1, covshrinkf, jointest = TRUE) {
   library(corpcor)
-  G = length(group.idx) # number of groups
-  xs = wt.scale(x=data[group.idx[[group.select]],], center=TRUE, scale=TRUE)
-
-  n = nrow(xs)
-  w = rep(1/n, n)
-  sw = sqrt(w)
-  w2 = sum(w*w)
-  h1w2 = w2/(1-w2)
-
-  S.emp = lapply(group.idx, function(idx) covcal(data[idx,]))
-  S.g = covcal(data[group.idx[[group.select]],])
-  S.all = 1/G*Reduce("+", S.emp)
-
-  E2R = (crossprod(sweep(xs, MARGIN=1, STATS=sw, FUN="*")))^2
-  ER2 = crossprod(sweep(xs^2, MARGIN=1, STATS=sw, FUN="*"))
-
-  sE2R = sum(E2R) - sum(diag(E2R))
-  sER2 = sum(ER2) - sum(diag(ER2))
-
-  de = (S.g - S.all)^2
-
-  denominator = sum(de) - sum(diag(de))
-  numerator = sER2 - sE2R
-
-  if(denominator == 0)
-    alpha = 1
-  else
-    alpha = max(0, min(1, numerator/denominator * h1w2))
-
-  S.est = (1-alpha)*S.g + alpha*S.all
-  return(S.est)
-}
-
-cov.shrink.commonNet <- function(data, group.idx, group.select = 1, covshrinkf, alpha = NULL, jointest = TRUE, alpha.method = "jointGeneNet") {
-  library(corpcor)
-  # data: feature in columns and samples in row
-  # group.idx: list of index of samples in each group
-  # covshrinkf: shrink function return shrunk correlation matrix
 
 
   #========== Step 1: Identity shrinkage ==========#
@@ -269,16 +226,7 @@ cov.shrink.commonNet <- function(data, group.idx, group.select = 1, covshrinkf, 
   if (jointest) {
     #=========== Step 2: commonNet shrinkage ==========#
     # Parameter for shrinkage constant
-
-    if (is.null(alpha)){
-      S.est = SEst(method = alpha.method, data, group.idx, group.select, covshrinkf)
-    } else {
-      S.g = covcal(data[group.idx[[group.select]],])
-      S.all = 1/(G-1)*Reduce("+", S.emp[-group.select])
-
-      alpha = alpha
-      S.est = (1-alpha)*S.g + alpha*S.all
-    }
+    S.est = ttls(data, group.idx, group.select, covshrinkf)
 
   } else {
 
